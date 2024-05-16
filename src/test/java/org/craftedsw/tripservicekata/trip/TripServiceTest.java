@@ -1,8 +1,9 @@
 package org.craftedsw.tripservicekata.trip;
 
 import org.craftedsw.tripservicekata.exception.UserNotLoggedInException;
+import org.craftedsw.tripservicekata.user.AuthentificationUserImpl;
+import org.craftedsw.tripservicekata.user.IAuthenticationUser;
 import org.craftedsw.tripservicekata.user.User;
-import org.craftedsw.tripservicekata.user.UserSession;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,17 +31,19 @@ public class TripServiceTest {
     }
     @Test
     public void test_userLogged(){
-        TripService tripService = new TripServiceForTest(tripDAO);
+        IAuthenticationUser authen = new AuthentificationUserImpl(loggerUser);
+        TripService tripService = new TripService(tripDAO, authen);
         Assertions.assertEquals(tripService.getTripsByUser(user), Collections.<Trip>emptyList());
     }
     @Test
     public void test_userNotLogged(){
-        loggerUser = null;
-        TripService tripService = new TripServiceForTest(tripDAO);
+        IAuthenticationUser authen = new AuthentificationUserImpl(null);
+        TripService tripService = new TripService(tripDAO, authen);
         Assertions.assertThrows(UserNotLoggedInException.class, ()-> tripService.getTripsByUser(user));
     }
     @Test
     public void test_find_trip_when_user_and_logged_are_friend(){
+        IAuthenticationUser authen = new AuthentificationUserImpl(loggerUser);
         Trip trip = new Trip();
         User user = new User();
         user.addTrip(trip);
@@ -48,19 +51,8 @@ public class TripServiceTest {
         List<Trip> list = new ArrayList<>();
         list.add(trip);
         Mockito.when(tripDAO.findTripsByUser(user)).thenReturn(list);
-        TripService tripService = new TripServiceForTest(tripDAO);
+        TripService tripService = new TripService(tripDAO, authen);
         Assertions.assertEquals(tripService.getTripsByUser(user), user.trips());
     }
 
-    class TripServiceForTest extends TripService {
-
-        public TripServiceForTest(TripDAO tripDAO) {
-            super(tripDAO);
-        }
-
-        @Override
-        protected User loggerUser() {
-            return loggerUser;
-        }
-    }
 }
